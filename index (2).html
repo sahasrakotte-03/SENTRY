@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SENTRY // Authentication Security Toolkit</title>
+<meta name="description" content="SENTRY is a browser-based, interactive simulation of five authentication security modules — password strength checking, login lockout, secure password generation, brute-force detection, and password-guessing detection — built for a Python for Cybersecurity coursework assignment.">
+<meta name="author" content="SENTRY Toolkit">
+<meta property="og:title" content="SENTRY // Authentication Security Toolkit">
+<meta property="og:description" content="Five interactive modules simulating core authentication defenses: strength checking, lockout enforcement, secure generation, and two attack-detection engines.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f0a94e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2 4 5v6c0 5.2 3.4 9.7 8 11 4.6-1.3 8-5.8 8-11V5l-8-3Z'/%3E%3Cpath d='m9 12 2 2 4-4'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0f1a;
+    --panel:#101826;
+    --panel-2:#0d141f;
+    --border:#1e293b;
+    --border-soft:#172233;
+    --text:#e6ebf2;
+    --muted:#8291a6;
+    --muted-2:#5a6b82;
+    --amber:#f0a94e;
+    --amber-dim:#8a6329;
+    --teal:#34d399;
+    --teal-dim:#1a5c46;
+    --red:#f0616b;
+    --red-dim:#5c2529;
+    --cyan:#5ec8d8;
+    --font-display:'Space Grotesk', sans-serif;
+    --font-body:'Inter', sans-serif;
+    --font-mono:'IBM Plex Mono', monospace;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(240,169,78,0.07), transparent),
+      radial-gradient(ellipse 700px 500px at 100% 10%, rgba(52,211,153,0.05), transparent),
+      var(--bg);
+    color:var(--text);
+    font-family:var(--font-body);
+    min-height:100vh;
+    line-height:1.5;
+  }
+  .scan-noise{
+    position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.035;
+    background-image:repeating-linear-gradient(0deg, #fff 0px, transparent 1px, transparent 2px, #fff 3px);
+  }
+  a{color:inherit;}
+
+  /* ---------- HEADER ---------- */
+  header{
+    position:relative; z-index:2;
+    border-bottom:1px solid var(--border-soft);
+    padding:22px clamp(18px,4vw,48px);
+    display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    background:linear-gradient(180deg, rgba(16,24,38,0.6), transparent);
+  }
+  .brand{display:flex; align-items:center; gap:12px;}
+  .brand-mark{
+    width:38px; height:38px; border:1.5px solid var(--amber); border-radius:8px;
+    display:flex; align-items:center; justify-content:center; position:relative; flex-shrink:0;
+    background:rgba(240,169,78,0.06);
+  }
+  .brand-mark::after{
+    content:''; position:absolute; inset:5px; border:1px solid var(--amber); border-radius:4px; opacity:.5;
+  }
+  .brand-mark svg{width:18px; height:18px; stroke:var(--amber); position:relative;}
+  .brand-text h1{font-family:var(--font-display); font-size:19px; letter-spacing:0.08em; font-weight:700;}
+  .brand-text p{font-family:var(--font-mono); font-size:10.5px; color:var(--muted-2); letter-spacing:0.12em; text-transform:uppercase; margin-top:2px;}
+  .status-pill{
+    font-family:var(--font-mono); font-size:11px; letter-spacing:.06em; color:var(--teal);
+    border:1px solid var(--teal-dim); background:rgba(52,211,153,0.07);
+    padding:6px 12px; border-radius:20px; display:flex; align-items:center; gap:8px;
+  }
+  .status-pill .dot{width:6px; height:6px; border-radius:50%; background:var(--teal); box-shadow:0 0 8px var(--teal); animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;} 50%{opacity:.35;}}
+
+  /* ---------- HERO ---------- */
+  .hero{
+    position:relative; z-index:2; padding:64px clamp(18px,4vw,48px) 40px;
+    border-bottom:1px solid var(--border-soft);
+    overflow:hidden;
+  }
+  .hero::before{
+    content:''; position:absolute; left:0; right:0; top:0; height:1px;
+    background:linear-gradient(90deg, transparent, var(--amber), transparent);
+    animation:sweep 6s linear infinite;
+  }
+  @keyframes sweep{0%{transform:translateX(-100%);} 100%{transform:translateX(100%);}}
+  .hero-eyebrow{
+    font-family:var(--font-mono); font-size:11.5px; letter-spacing:.18em; color:var(--amber);
+    text-transform:uppercase; display:flex; align-items:center; gap:10px; margin-bottom:18px;
+  }
+  .hero-eyebrow::before{content:'▸'; }
+  .hero h2{
+    font-family:var(--font-display); font-size:clamp(28px, 4.4vw, 46px); font-weight:700; letter-spacing:-0.01em;
+    max-width:820px; line-height:1.12;
+  }
+  .hero h2 span{color:var(--amber);}
+  .hero p.lede{
+    margin-top:18px; max-width:620px; color:var(--muted); font-size:15px; line-height:1.65;
+  }
+  .hero-meta{
+    margin-top:32px; display:flex; gap:0; flex-wrap:wrap; border:1px solid var(--border-soft); border-radius:10px; overflow:hidden;
+  }
+  .hero-meta div{
+    padding:14px 22px; border-right:1px solid var(--border-soft); flex:1; min-width:140px;
+  }
+  .hero-meta div:last-child{border-right:none;}
+  .hero-meta .k{font-family:var(--font-mono); font-size:10px; letter-spacing:.1em; color:var(--muted-2); text-transform:uppercase;}
+  .hero-meta .v{font-family:var(--font-display); font-size:20px; font-weight:700; margin-top:4px; color:var(--text);}
+
+  /* ---------- LAYOUT: SIDEBAR + MAIN ---------- */
+  .layout{
+    position:relative; z-index:2;
+    display:flex; align-items:flex-start;
+    max-width:1320px; margin:0 auto;
+  }
+
+  /* ---------- NAV (LEFT SIDEBAR, STACKED) ---------- */
+  .module-nav{
+    position:sticky; top:0; z-index:10; flex-shrink:0;
+    width:200px; align-self:stretch;
+    display:flex; flex-direction:column; gap:0;
+    background:rgba(10,15,26,0.92); backdrop-filter:blur(10px);
+    border-right:1px solid var(--border-soft);
+    padding:18px 0;
+    height:100vh; overflow-y:auto;
+  }
+  .module-nav::-webkit-scrollbar{width:0;}
+  .tab-btn{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.04em; color:var(--muted);
+    background:none; border:none; cursor:pointer; white-space:nowrap;
+    border-left:2px solid transparent; display:flex; flex-direction:column; gap:3px; text-align:left;
+    padding:14px 22px; transition:color .15s, border-color .15s, background .15s;
+  }
+  .tab-btn .num{color:var(--muted-2); font-size:10.5px;}
+  .tab-btn .name{font-family:var(--font-body); font-weight:600; font-size:13.5px; color:var(--muted);}
+  .tab-btn:hover{background:rgba(240,169,78,0.04);}
+  .tab-btn:hover .name{color:var(--text);}
+  .tab-btn.active{border-left-color:var(--amber); background:rgba(240,169,78,0.06);}
+  .tab-btn.active .name{color:var(--amber);}
+  .tab-btn.active .num{color:var(--amber);}
+
+  @media(max-width:560px){
+    .layout{flex-direction:column;}
+    .module-nav{
+      position:sticky; top:0; width:100%; height:auto; flex-direction:row; overflow-x:auto; overflow-y:hidden;
+      border-right:none; border-bottom:1px solid var(--border-soft); padding:0;
+    }
+    .tab-btn{border-left:none; border-bottom:2px solid transparent; padding:14px 16px;}
+    .tab-btn.active{border-left-color:transparent; border-bottom-color:var(--amber);}
+  }
+
+  /* ---------- MAIN ---------- */
+  main{position:relative; z-index:2; padding:44px clamp(18px,3vw,40px) 90px; max-width:1000px; margin:0 auto; flex:1; min-width:0;}
+  .module{display:none;}
+  .module.active{display:block; animation:fadein .35s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+
+  .module-head{margin-bottom:28px;}
+  .module-head .tag{
+    font-family:var(--font-mono); font-size:11px; color:var(--amber); letter-spacing:.14em; text-transform:uppercase;
+  }
+  .module-head h3{font-family:var(--font-display); font-size:28px; margin-top:8px; font-weight:700;}
+  .module-head p{color:var(--muted); font-size:14px; margin-top:8px; max-width:640px;}
+
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:22px;}
+  @media(max-width:840px){.grid{grid-template-columns:1fr;}}
+
+  .panel{
+    background:linear-gradient(180deg, var(--panel), var(--panel-2));
+    border:1px solid var(--border); border-radius:12px; padding:24px;
+  }
+  .panel h4{
+    font-family:var(--font-mono); font-size:11.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted);
+    margin-bottom:16px; display:flex; align-items:center; gap:8px;
+  }
+  .panel h4::before{content:''; width:6px; height:6px; background:var(--amber); border-radius:1px;}
+
+  label{font-size:12.5px; color:var(--muted); display:block; margin-bottom:6px; font-family:var(--font-mono); letter-spacing:.02em;}
+  input[type=text], input[type=password], input[type=number], textarea{
+    width:100%; background:var(--bg); border:1px solid var(--border); color:var(--text);
+    padding:11px 13px; border-radius:8px; font-family:var(--font-mono); font-size:13.5px;
+    outline:none; transition:border-color .15s;
+  }
+  textarea{resize:vertical; min-height:120px; line-height:1.5;}
+  input:focus, textarea:focus{border-color:var(--amber);}
+  input[type=range]{width:100%; accent-color:var(--amber);}
+
+  .field{margin-bottom:16px;}
+  .row{display:flex; gap:12px;}
+  .row > *{flex:1;}
+
+  .checkbox-row{display:flex; align-items:center; gap:9px; padding:9px 0; cursor:pointer; user-select:none;}
+  .checkbox-row input{width:16px; height:16px; accent-color:var(--amber); cursor:pointer;}
+  .checkbox-row span{font-size:13.5px; color:var(--text); font-family:var(--font-mono);}
+
+  button.btn{
+    font-family:var(--font-mono); font-weight:600; font-size:13px; letter-spacing:.03em;
+    background:var(--amber); color:#1a1103; border:none; padding:12px 20px; border-radius:8px;
+    cursor:pointer; transition:filter .15s, transform .1s; text-transform:uppercase;
+  }
+  button.btn:hover{filter:brightness(1.08);}
+  button.btn:active{transform:scale(.98);}
+  button.btn.secondary{
+    background:transparent; color:var(--text); border:1px solid var(--border);
+  }
+  button.btn.secondary:hover{border-color:var(--muted);}
+  button.btn.danger{background:var(--red); color:#2a0a0d;}
+  button.btn:disabled{opacity:.4; cursor:not-allowed;}
+  .btn-row{display:flex; gap:10px; margin-top:6px; flex-wrap:wrap;}
+
+  /* password strength meter */
+  .meter-track{
+    display:flex; gap:5px; margin-top:14px; margin-bottom:10px;
+  }
+  .meter-seg{height:7px; flex:1; border-radius:3px; background:var(--border);}
+  .meter-seg.on{background:var(--seg-color, var(--amber));}
+  .strength-label{
+    font-family:var(--font-display); font-weight:700; font-size:17px; margin-top:4px;
+  }
+  .criteria-list{margin-top:16px; display:flex; flex-direction:column; gap:8px;}
+  .criteria-item{display:flex; align-items:center; gap:9px; font-size:13px; color:var(--muted); font-family:var(--font-mono);}
+  .criteria-item .chk{width:16px; height:16px; border-radius:4px; border:1px solid var(--border); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:11px;}
+  .criteria-item.pass .chk{background:var(--teal-dim); border-color:var(--teal); color:var(--teal);}
+  .criteria-item.pass{color:var(--text);}
+  .criteria-item.fail .chk{color:var(--red); border-color:var(--red-dim);}
+
+  /* output log */
+  .log{
+    font-family:var(--font-mono); font-size:12.5px; background:var(--bg); border:1px solid var(--border);
+    border-radius:8px; padding:14px; margin-top:14px; min-height:60px; max-height:340px; overflow-y:auto;
+    line-height:1.7;
+  }
+  .log .empty{color:var(--muted-2);}
+  .log-line{padding:3px 0; border-bottom:1px solid var(--border-soft);}
+  .log-line:last-child{border-bottom:none;}
+  .log-line.ok{color:var(--teal);}
+  .log-line.warn{color:var(--amber);}
+  .log-line.alert{color:var(--red);}
+  .log-line.info{color:var(--muted);}
+
+  .badge{
+    display:inline-block; font-family:var(--font-mono); font-size:10.5px; letter-spacing:.06em;
+    padding:2px 8px; border-radius:4px; text-transform:uppercase; font-weight:600;
+  }
+  .badge.ok{background:var(--teal-dim); color:var(--teal);}
+  .badge.warn{background:rgba(240,169,78,0.15); color:var(--amber);}
+  .badge.alert{background:var(--red-dim); color:var(--red);}
+
+  .attempt-track{display:flex; gap:8px; margin:16px 0;}
+  .attempt-dot{
+    width:34px; height:34px; border-radius:50%; border:1.5px solid var(--border);
+    display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-size:13px; color:var(--muted-2);
+  }
+  .attempt-dot.used{border-color:var(--red); color:var(--red); background:var(--red-dim);}
+  .attempt-dot.ok{border-color:var(--teal); color:var(--teal); background:var(--teal-dim);}
+
+  .lock-banner{
+    margin-top:14px; padding:14px 16px; border-radius:8px; border:1px solid var(--red-dim);
+    background:rgba(240,97,107,0.08); color:var(--red); font-family:var(--font-mono); font-size:13px;
+    display:none; align-items:center; gap:10px;
+  }
+  .lock-banner.show{display:flex;}
+
+  .pwd-output{
+    font-family:var(--font-mono); font-size:17px; background:var(--bg); border:1px dashed var(--border);
+    border-radius:8px; padding:16px; letter-spacing:.03em; word-break:break-all; color:var(--teal);
+    margin-bottom:14px; min-height:24px;
+  }
+
+  table{width:100%; border-collapse:collapse; margin-top:14px; font-family:var(--font-mono); font-size:12.5px;}
+  th,td{text-align:left; padding:9px 10px; border-bottom:1px solid var(--border-soft);}
+  th{color:var(--muted-2); font-weight:500; text-transform:uppercase; font-size:10.5px; letter-spacing:.06em;}
+  tr:last-child td{border-bottom:none;}
+  td.ip{color:var(--cyan);}
+  td.count{color:var(--red); font-weight:600;}
+
+  .helptext{font-size:11.5px; color:var(--muted-2); margin-top:6px; font-family:var(--font-mono);}
+
+  .summary-cards{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:16px;}
+  @media(max-width:600px){.summary-cards{grid-template-columns:1fr;}}
+  .s-card{border:1px solid var(--border); border-radius:8px; padding:14px; background:var(--bg);}
+  .s-card .n{font-family:var(--font-display); font-size:26px; font-weight:700;}
+  .s-card .l{font-family:var(--font-mono); font-size:10.5px; color:var(--muted-2); text-transform:uppercase; letter-spacing:.08em; margin-top:2px;}
+
+  footer{
+    border-top:1px solid var(--border-soft); padding:26px clamp(18px,4vw,48px); text-align:center;
+    font-family:var(--font-mono); font-size:11px; color:var(--muted-2); letter-spacing:.04em;
+  }
+</style>
+</head>
+<body>
+<div class="scan-noise"></div>
+
+<header>
+  <div class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2 4 5v6c0 5.2 3.4 9.7 8 11 4.6-1.3 8-5.8 8-11V5l-8-3Z"/>
+        <path d="m9 12 2 2 4-4"/>
+      </svg>
+    </div>
+    <div class="brand-text">
+      <h1>SENTRY</h1>
+      <p>Authentication Security Toolkit</p>
+    </div>
+  </div>
+  <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+    <div class="status-pill"><span class="dot"></span> ALL SYSTEMS MONITORING</div>
+    <a href="https://github.com/" target="_blank" rel="noopener" style="font-family:var(--font-mono); font-size:11px; letter-spacing:.06em; color:var(--muted); border:1px solid var(--border-soft); padding:6px 12px; border-radius:20px; text-decoration:none; display:flex; align-items:center; gap:7px;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5A11.5 11.5 0 0 0 .5 12c0 5.1 3.29 9.4 7.86 10.93.57.1.78-.25.78-.55v-2.15c-3.2.7-3.87-1.35-3.87-1.35-.53-1.34-1.28-1.7-1.28-1.7-1.05-.72.08-.71.08-.71 1.16.08 1.77 1.2 1.77 1.2 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.28 1.19-3.09-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.79 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.58.24 2.75.12 3.04.74.81 1.19 1.83 1.19 3.09 0 4.43-2.7 5.4-5.27 5.69.42.36.78 1.07.78 2.16v3.2c0 .3.2.66.79.55A11.5 11.5 0 0 0 23.5 12 11.5 11.5 0 0 0 12 .5Z"/></svg>
+      View Source
+    </a>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-eyebrow">Python for Cybersecurity — Assignment Build</div>
+  <h2>Five modules. One console. Every layer of a <span>login, tested.</span></h2>
+  <p class="lede">A working simulation of the authentication defenses every system relies on — strength checking, lockout enforcement, secure generation, and two attack-detection engines — rebuilt as an interactive console so the logic in your Python source is easy to demo and easy to grade.</p>
+  <div class="hero-meta">
+    <div><div class="k">Modules</div><div class="v">05</div></div>
+    
+    <div><div class="k">Threat Engines</div><div class="v">02</div></div>
+    <div><div class="k">Language</div><div class="v">Python 3</div></div>
+  </div>
+</section>
+
+<div class="layout">
+<nav class="module-nav" id="moduleNav">
+  <button class="tab-btn active" data-mod="m1"><span class="num">MOD-01</span><span class="name">Password Strength</span></button>
+  <button class="tab-btn" data-mod="m2"><span class="num">MOD-02</span><span class="name">Login Lockout</span></button>
+  <button class="tab-btn" data-mod="m3"><span class="num">MOD-03</span><span class="name">Password Generator</span></button>
+  <button class="tab-btn" data-mod="m4"><span class="num">MOD-04</span><span class="name">Brute Force Detection</span></button>
+  <button class="tab-btn" data-mod="m5"><span class="num">MOD-05</span><span class="name">Guessing Detection</span></button>
+</nav>
+
+<main>
+
+  <!-- MODULE 1 -->
+  <section class="module active" id="m1">
+    <div class="module-head">
+      <div class="tag">Module 01</div>
+      <h3>Password Strength Checker</h3>
+      <p>Type a password to see it scored live against five defensive criteria: length, character variety, and case mixing. This mirrors a Python function returning a score 0–5 plus a feedback list.</p>
+    </div>
+    <div class="grid">
+      <div class="panel">
+        <h4>Input</h4>
+        <div class="field">
+          <label for="pwdInput">Password</label>
+          <input type="text" id="pwdInput" placeholder="Start typing..." autocomplete="off">
+        </div>
+        <label>Strength score</label>
+        <div class="meter-track" id="meterTrack"></div>
+        <div class="strength-label" id="strengthLabel">—</div>
+      </div>
+      <div class="panel">
+        <h4>Criteria Checklist</h4>
+        <div class="criteria-list" id="criteriaList"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MODULE 2 -->
+  <section class="module" id="m2">
+    <div class="module-head">
+      <div class="tag">Module 02</div>
+      <h3>Login Lockout Simulator</h3>
+      <p>Demo credentials: username <b>admin</b>, password <b>SecurePass123!</b> — three attempts total. Remaining attempts are shown after each failure; the account locks on the third and further attempts are rejected.</p>
+    </div>
+    <div class="grid">
+      <div class="panel">
+        <h4>Login Console</h4>
+        <div class="field">
+          <label for="loginUser">Username</label>
+          <input type="text" id="loginUser" placeholder="admin" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="loginPass">Password</label>
+          <input type="password" id="loginPass" placeholder="••••••••" autocomplete="off">
+        </div>
+        <div class="attempt-track" id="attemptTrack"></div>
+        <div class="btn-row">
+          <button class="btn" id="loginBtn">Attempt Login</button>
+          <button class="btn secondary" id="resetLockBtn">Reset Session</button>
+        </div>
+        <div class="lock-banner" id="lockBanner">🔒 Account locked — maximum attempts exceeded. Contact your administrator to unlock.</div>
+      </div>
+      <div class="panel">
+        <h4>Session Log</h4>
+        <div class="log" id="loginLog"><div class="empty">No login attempts yet.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MODULE 3 -->
+  <section class="module" id="m3">
+    <div class="module-head">
+      <div class="tag">Module 03</div>
+      <h3>Secure Password Generator</h3>
+      <p>Set a length and select which character classes to draw from. The generator guarantees at least one character from every class you select before filling the remainder randomly.</p>
+    </div>
+    <div class="grid">
+      <div class="panel">
+        <h4>Generation Criteria</h4>
+        <div class="field">
+          <label for="lenRange">Length: <span id="lenVal">16</span> characters</label>
+          <input type="range" id="lenRange" min="4" max="64" value="16">
+        </div>
+        <label class="checkbox-row"><input type="checkbox" id="cUpper" checked><span>Uppercase letters (A–Z)</span></label>
+        <label class="checkbox-row"><input type="checkbox" id="cLower" checked><span>Lowercase letters (a–z)</span></label>
+        <label class="checkbox-row"><input type="checkbox" id="cNum" checked><span>Numbers (0–9)</span></label>
+        <label class="checkbox-row"><input type="checkbox" id="cSpecial" checked><span>Special characters (!@#$...)</span></label>
+        <div class="btn-row">
+          <button class="btn" id="genBtn">Generate Password</button>
+        </div>
+      </div>
+      <div class="panel">
+        <h4>Result</h4>
+        <div class="pwd-output" id="pwdOutput">—</div>
+        <div class="btn-row">
+          <button class="btn secondary" id="copyBtn">Copy to Clipboard</button>
+        </div>
+        <label style="margin-top:18px;">Generated strength</label>
+        <div class="meter-track" id="genMeterTrack"></div>
+        <div class="strength-label" id="genStrengthLabel">—</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MODULE 4 -->
+  <section class="module" id="m4">
+    <div class="module-head">
+      <div class="tag">Module 04</div>
+      <h3>Brute Force Attack Detection</h3>
+      <p>Paste login attempt records as <code>ip,status</code> per line (status is <code>SUCCESS</code> or <code>FAILED</code>). The engine counts failures per IP and flags any address with 3 or more failed attempts.</p>
+    </div>
+    <div class="grid">
+      <div class="panel">
+        <h4>Login Attempt Log (input)</h4>
+        <div class="field">
+          <textarea id="bruteInput"></textarea>
+        </div>
+        <div class="helptext">Format: one record per line — ip,status</div>
+        <div class="btn-row">
+          <button class="btn" id="bruteAnalyzeBtn">Analyze Log</button>
+          <button class="btn secondary" id="bruteSampleBtn">Load Sample Data</button>
+        </div>
+      </div>
+      <div class="panel">
+        <h4>Detection Report</h4>
+        <div class="summary-cards" id="bruteSummary"></div>
+        <table id="bruteTable" style="display:none;">
+          <thead><tr><th>IP Address</th><th>Failed Attempts</th><th>Status</th></tr></thead>
+          <tbody id="bruteTableBody"></tbody>
+        </table>
+        <div class="log" id="bruteLog"><div class="empty">Run an analysis to see alerts.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MODULE 5 -->
+  <section class="module" id="m5">
+    <div class="module-head">
+      <div class="tag">Module 05</div>
+      <h3>Password Guessing Detection</h3>
+      <p>Paste login attempt records as <code>username,password,status</code> per line. The engine flags usernames that received 3 or more failed attempts using different passwords — the signature of a targeted guessing attack rather than a single mistyped login.</p>
+    </div>
+    <div class="grid">
+      <div class="panel">
+        <h4>Login Attempt Log (input)</h4>
+        <div class="field">
+          <textarea id="guessInput"></textarea>
+        </div>
+        <div class="helptext">Format: one record per line — username,password,status</div>
+        <div class="btn-row">
+          <button class="btn" id="guessAnalyzeBtn">Analyze Log</button>
+          <button class="btn secondary" id="guessSampleBtn">Load Sample Data</button>
+        </div>
+      </div>
+      <div class="panel">
+        <h4>Detection Report</h4>
+        <div class="summary-cards" id="guessSummary"></div>
+        <table id="guessTable" style="display:none;">
+          <thead><tr><th>Username</th><th>Distinct Passwords Tried</th><th>Status</th></tr></thead>
+          <tbody id="guessTableBody"></tbody>
+        </table>
+        <div class="log" id="guessLog"><div class="empty">Run an analysis to see alerts.</div></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+</div>
+
+<footer>SENTRY TOOLKIT — built for the Python for Cybersecurity coursework · client-side simulation of the Python source logic</footer>
+
+<script>
+/* ============ NAV ============ */
+const tabs = document.querySelectorAll('.tab-btn');
+const modules = document.querySelectorAll('.module');
+tabs.forEach(t => t.addEventListener('click', () => {
+  tabs.forEach(x=>x.classList.remove('active'));
+  modules.forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  document.getElementById(t.dataset.mod).classList.add('active');
+}));
+
+/* ============ MODULE 1: PASSWORD STRENGTH ============ */
+function evaluatePassword(pwd){
+  const checks = [
+    {label:'At least 8 characters', pass: pwd.length >= 8},
+    {label:'At least one uppercase letter', pass: /[A-Z]/.test(pwd)},
+    {label:'At least one lowercase letter', pass: /[a-z]/.test(pwd)},
+    {label:'At least one number', pass: /[0-9]/.test(pwd)},
+    {label:'At least one special character', pass: /[^A-Za-z0-9]/.test(pwd)},
+  ];
+  const score = checks.filter(c=>c.pass).length;
+  let label, color;
+  if(pwd.length===0){label='—'; color='var(--border)';}
+  else if(score<=1){label='Very Weak'; color='var(--red)';}
+  else if(score===2){label='Weak'; color='var(--red)';}
+  else if(score===3){label='Moderate'; color='var(--amber)';}
+  else if(score===4){label='Strong'; color='var(--teal)';}
+  else {label='Very Strong'; color='var(--teal)';}
+  return {checks, score, label, color};
+}
+function renderMeter(trackEl, score, color){
+  trackEl.innerHTML='';
+  for(let i=0;i<5;i++){
+    const seg=document.createElement('div');
+    seg.className='meter-seg'+(i<score?' on':'');
+    if(i<score) seg.style.setProperty('--seg-color', color);
+    trackEl.appendChild(seg);
+  }
+}
+const pwdInput = document.getElementById('pwdInput');
+const criteriaList = document.getElementById('criteriaList');
+const strengthLabel = document.getElementById('strengthLabel');
+const meterTrack = document.getElementById('meterTrack');
+function updateStrengthUI(){
+  const res = evaluatePassword(pwdInput.value);
+  renderMeter(meterTrack, res.score, res.color);
+  strengthLabel.textContent = res.label;
+  strengthLabel.style.color = res.color;
+  criteriaList.innerHTML='';
+  res.checks.forEach(c=>{
+    const div=document.createElement('div');
+    div.className='criteria-item '+(c.pass?'pass':'fail');
+    div.innerHTML=`<span class="chk">${c.pass?'✓':'✕'}</span><span>${c.label}</span>`;
+    criteriaList.appendChild(div);
+  });
+}
+pwdInput.addEventListener('input', updateStrengthUI);
+updateStrengthUI();
+
+/* ============ MODULE 2: LOGIN LOCKOUT ============ */
+const VALID_USER = 'admin';
+const VALID_PASS = 'SecurePass123!';
+const MAX_ATTEMPTS = 3;
+let attemptsUsed = 0;
+let locked = false;
+const attemptTrack = document.getElementById('attemptTrack');
+const loginLog = document.getElementById('loginLog');
+const lockBanner = document.getElementById('lockBanner');
+const loginBtn = document.getElementById('loginBtn');
+
+function renderAttempts(){
+  attemptTrack.innerHTML='';
+  for(let i=0;i<MAX_ATTEMPTS;i++){
+    const dot=document.createElement('div');
+    dot.className='attempt-dot'+(i<attemptsUsed?' used':'');
+    dot.textContent=i+1;
+    attemptTrack.appendChild(dot);
+  }
+}
+function logLine(container, text, cls){
+  if(container.querySelector('.empty')) container.innerHTML='';
+  const line=document.createElement('div');
+  line.className='log-line '+cls;
+  const time=new Date().toLocaleTimeString();
+  line.textContent=`[${time}] ${text}`;
+  container.appendChild(line);
+  container.scrollTop = container.scrollHeight;
+}
+function resetLockout(){
+  attemptsUsed=0; locked=false;
+  lockBanner.classList.remove('show');
+  loginBtn.disabled=false;
+  renderAttempts();
+  loginLog.innerHTML='<div class="empty">No login attempts yet.</div>';
+}
+document.getElementById('resetLockBtn').addEventListener('click', resetLockout);
+loginBtn.addEventListener('click', ()=>{
+  if(locked) return;
+  const u=document.getElementById('loginUser').value.trim();
+  const p=document.getElementById('loginPass').value;
+  if(u===VALID_USER && p===VALID_PASS){
+    logLine(loginLog, `Login successful for user "${u}".`, 'ok');
+    attemptsUsed=0;
+    renderAttempts();
+    return;
+  }
+  attemptsUsed++;
+  renderAttempts();
+  const remaining = MAX_ATTEMPTS - attemptsUsed;
+  if(remaining>0){
+    logLine(loginLog, `Login failed for user "${u||'(blank)'}". ${remaining} attempt(s) remaining.`, 'warn');
+  } else {
+    locked=true;
+    loginBtn.disabled=true;
+    lockBanner.classList.add('show');
+    logLine(loginLog, `Login failed for user "${u||'(blank)'}". Account locked — maximum attempts exceeded.`, 'alert');
+  }
+});
+renderAttempts();
+
+/* ============ MODULE 3: PASSWORD GENERATOR ============ */
+const lenRange=document.getElementById('lenRange');
+const lenVal=document.getElementById('lenVal');
+lenRange.addEventListener('input', ()=> lenVal.textContent=lenRange.value);
+
+const CHARSETS = {
+  upper:'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+  lower:'abcdefghijklmnopqrstuvwxyz',
+  num:'0123456789',
+  special:'!@#$%^&*()-_=+[]{}<>?'
+};
+function secureRandomInt(max){
+  const arr = new Uint32Array(1);
+  crypto.getRandomValues(arr);
+  return arr[0] % max;
+}
+function generatePassword(length, useUpper, useLower, useNum, useSpecial){
+  const active=[];
+  if(useUpper) active.push(CHARSETS.upper);
+  if(useLower) active.push(CHARSETS.lower);
+  if(useNum) active.push(CHARSETS.num);
+  if(useSpecial) active.push(CHARSETS.special);
+  if(active.length===0) return null;
+
+  let pool='';
+  active.forEach(set=>pool+=set);
+
+  // guarantee at least one char from each selected class
+  let chars = active.map(set => set[secureRandomInt(set.length)]);
+  while(chars.length < length){
+    chars.push(pool[secureRandomInt(pool.length)]);
+  }
+  // shuffle (Fisher-Yates)
+  for(let i=chars.length-1;i>0;i--){
+    const j=secureRandomInt(i+1);
+    [chars[i],chars[j]]=[chars[j],chars[i]];
+  }
+  return chars.slice(0,length).join('');
+}
+document.getElementById('genBtn').addEventListener('click', ()=>{
+  const length=parseInt(lenRange.value,10);
+  const u=document.getElementById('cUpper').checked;
+  const l=document.getElementById('cLower').checked;
+  const n=document.getElementById('cNum').checked;
+  const s=document.getElementById('cSpecial').checked;
+  const out=document.getElementById('pwdOutput');
+  const pwd=generatePassword(length,u,l,n,s);
+  if(!pwd){
+    out.textContent='Select at least one character type.';
+    out.style.color='var(--red)';
+    return;
+  }
+  out.textContent=pwd;
+  out.style.color='var(--teal)';
+  const res=evaluatePassword(pwd);
+  renderMeter(document.getElementById('genMeterTrack'), res.score, res.color);
+  const gl=document.getElementById('genStrengthLabel');
+  gl.textContent=res.label; gl.style.color=res.color;
+});
+document.getElementById('copyBtn').addEventListener('click', ()=>{
+  const text=document.getElementById('pwdOutput').textContent;
+  if(!text || text==='—') return;
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn=document.getElementById('copyBtn');
+    const orig=btn.textContent;
+    btn.textContent='Copied!';
+    setTimeout(()=>btn.textContent=orig, 1200);
+  });
+});
+
+/* ============ MODULE 4: BRUTE FORCE DETECTION ============ */
+const BRUTE_SAMPLE =
+`192.168.1.10,FAILED
+192.168.1.10,FAILED
+192.168.1.10,FAILED
+192.168.1.10,FAILED
+203.0.113.7,SUCCESS
+203.0.113.7,FAILED
+198.51.100.23,FAILED
+198.51.100.23,FAILED
+198.51.100.23,FAILED
+10.0.0.5,FAILED
+10.0.0.5,SUCCESS
+172.16.0.9,FAILED
+172.16.0.9,FAILED`;
+
+document.getElementById('bruteSampleBtn').addEventListener('click', ()=>{
+  document.getElementById('bruteInput').value = BRUTE_SAMPLE;
+});
+
+function parseBruteLines(raw){
+  return raw.split('\n').map(l=>l.trim()).filter(Boolean).map(line=>{
+    const parts=line.split(',').map(p=>p.trim());
+    return {ip:parts[0], status:(parts[1]||'').toUpperCase()};
+  });
+}
+
+document.getElementById('bruteAnalyzeBtn').addEventListener('click', ()=>{
+  const raw = document.getElementById('bruteInput').value;
+  const summaryEl = document.getElementById('bruteSummary');
+  const logEl = document.getElementById('bruteLog');
+  const table = document.getElementById('bruteTable');
+  const tbody = document.getElementById('bruteTableBody');
+  logEl.innerHTML='';
+
+  if(!raw.trim()){
+    logEl.innerHTML='<div class="empty">No data to analyze. Paste log lines or load sample data.</div>';
+    summaryEl.innerHTML='';
+    table.style.display='none';
+    return;
+  }
+  const records = parseBruteLines(raw);
+  const THRESHOLD = 3;
+  const failCounts = {};
+  records.forEach(r=>{
+    if(r.status==='FAILED'){
+      failCounts[r.ip] = (failCounts[r.ip]||0)+1;
+    }
+  });
+  const flagged = Object.entries(failCounts).filter(([ip,count])=>count>=THRESHOLD)
+    .sort((a,b)=>b[1]-a[1]);
+
+  const totalIps = Object.keys(failCounts).length;
+  const totalFailed = Object.values(failCounts).reduce((a,b)=>a+b,0);
+  summaryEl.innerHTML = `
+    <div class="s-card"><div class="n">${records.length}</div><div class="l">Records Processed</div></div>
+    <div class="s-card"><div class="n">${totalFailed}</div><div class="l">Total Failed Attempts</div></div>
+    <div class="s-card"><div class="n" style="color:${flagged.length?'var(--red)':'var(--teal)'}">${flagged.length}</div><div class="l">IPs Flagged</div></div>
+  `;
+
+  if(flagged.length===0){
+    logEl.innerHTML='<div class="log-line ok">✓ No brute-force pattern detected. All IPs are below the 3-failure threshold.</div>';
+    table.style.display='none';
+  } else {
+    table.style.display='table';
+    tbody.innerHTML='';
+    flagged.forEach(([ip,count])=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td class="ip">${ip}</td><td class="count">${count}</td><td><span class="badge alert">Flagged</span></td>`;
+      tbody.appendChild(tr);
+      logLine(logEl, `SECURITY ALERT — brute-force pattern from ${ip}: ${count} failed attempts (threshold ${THRESHOLD}).`, 'alert');
+    });
+    logLine(logEl, `Scan complete. ${flagged.length} of ${totalIps} unique IP(s) flagged for brute-force behavior.`, 'info');
+  }
+});
+
+/* ============ MODULE 5: PASSWORD GUESSING DETECTION ============ */
+const GUESS_SAMPLE =
+`jsmith,password1,FAILED
+jsmith,qwerty123,FAILED
+jsmith,letmein99,FAILED
+jsmith,SecurePass123!,SUCCESS
+mrivera,abc12345,FAILED
+mrivera,abc12345,FAILED
+tomlin,sunshine1,FAILED
+tomlin,football22,FAILED
+tomlin,dragonfly7,FAILED
+tomlin,welcome2024,FAILED
+kpatel,Kpatel@2024,SUCCESS`;
+
+document.getElementById('guessSampleBtn').addEventListener('click', ()=>{
+  document.getElementById('guessInput').value = GUESS_SAMPLE;
+});
+
+function parseGuessLines(raw){
+  return raw.split('\n').map(l=>l.trim()).filter(Boolean).map(line=>{
+    const parts=line.split(',').map(p=>p.trim());
+    return {user:parts[0], pass:parts[1], status:(parts[2]||'').toUpperCase()};
+  });
+}
+
+document.getElementById('guessAnalyzeBtn').addEventListener('click', ()=>{
+  const raw = document.getElementById('guessInput').value;
+  const summaryEl = document.getElementById('guessSummary');
+  const logEl = document.getElementById('guessLog');
+  const table = document.getElementById('guessTable');
+  const tbody = document.getElementById('guessTableBody');
+  logEl.innerHTML='';
+
+  if(!raw.trim()){
+    logEl.innerHTML='<div class="empty">No data to analyze. Paste log lines or load sample data.</div>';
+    summaryEl.innerHTML='';
+    table.style.display='none';
+    return;
+  }
+  const records = parseGuessLines(raw);
+  const THRESHOLD = 3;
+  const userPasswords = {}; // user -> Set of distinct failed passwords
+  records.forEach(r=>{
+    if(r.status==='FAILED'){
+      if(!userPasswords[r.user]) userPasswords[r.user]=new Set();
+      userPasswords[r.user].add(r.pass);
+    }
+  });
+  const flagged = Object.entries(userPasswords)
+    .map(([user,set])=>[user, set.size])
+    .filter(([user,count])=>count>=THRESHOLD)
+    .sort((a,b)=>b[1]-a[1]);
+
+  const totalUsers = Object.keys(userPasswords).length;
+  const totalFailed = records.filter(r=>r.status==='FAILED').length;
+  summaryEl.innerHTML = `
+    <div class="s-card"><div class="n">${records.length}</div><div class="l">Records Processed</div></div>
+    <div class="s-card"><div class="n">${totalFailed}</div><div class="l">Total Failed Attempts</div></div>
+    <div class="s-card"><div class="n" style="color:${flagged.length?'var(--red)':'var(--teal)'}">${flagged.length}</div><div class="l">Accounts Targeted</div></div>
+  `;
+
+  if(flagged.length===0){
+    logEl.innerHTML='<div class="log-line ok">✓ No password-guessing pattern detected across the submitted log.</div>';
+    table.style.display='none';
+  } else {
+    table.style.display='table';
+    tbody.innerHTML='';
+    flagged.forEach(([user,count])=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td class="ip">${user}</td><td class="count">${count}</td><td><span class="badge alert">Flagged</span></td>`;
+      tbody.appendChild(tr);
+      logLine(logEl, `SECURITY ALERT — password-guessing attack targeting "${user}": ${count} distinct passwords attempted (threshold ${THRESHOLD}).`, 'alert');
+    });
+    logLine(logEl, `Scan complete. ${flagged.length} of ${totalUsers} account(s) flagged for guessing behavior.`, 'info');
+  }
+});
+</script>
+</body>
+</html>
